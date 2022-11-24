@@ -5,6 +5,8 @@ VisualStudioVersion = 17.4.33110.190
 MinimumVisualStudioVersion = 10.0.40219.1
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "TeleTool", "TeleTool\TeleTool.csproj", "{D3EED5E5-72D1-4244-9064-4AD5B0AD0E62}"
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Test", "Test\Test.csproj", "{B4975AC2-C030-41DE-8C79-47F884A1F8CB}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -15,6 +17,10 @@ Global
 		{D3EED5E5-72D1-4244-9064-4AD5B0AD0E62}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{D3EED5E5-72D1-4244-9064-4AD5B0AD0E62}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{D3EED5E5-72D1-4244-9064-4AD5B0AD0E62}.Release|Any CPU.Build.0 = Release|Any CPU
+		{B4975AC2-C030-41DE-8C79-47F884A1F8CB}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{B4975AC2-C030-41DE-8C79-47F884A1F8CB}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{B4975AC2-C030-41DE-8C79-47F884A1F8CB}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{B4975AC2-C030-41DE-8C79-47F884A1F8CB}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
