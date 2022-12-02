@@ -3,9 +3,9 @@ Microsoft Visual Studio Solution File, Format Version 12.00
 # Visual Studio Version 17
 VisualStudioVersion = 17.4.33110.190
 MinimumVisualStudioVersion = 10.0.40219.1
-Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "TeleTool", "TeleTool\TeleTool.csproj", "{D3EED5E5-72D1-4244-9064-4AD5B0AD0E62}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "TeleAPI", "TeleTool\TeleAPI.csproj", "{D3EED5E5-72D1-4244-9064-4AD5B0AD0E62}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Test", "Test\Test.csproj", "{B4975AC2-C030-41DE-8C79-47F884A1F8CB}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Test", "Test\Test.csproj", "{B4975AC2-C030-41DE-8C79-47F884A1F8CB}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution

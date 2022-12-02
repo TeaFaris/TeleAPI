@@ -1,9 +1,8 @@
 ﻿using Microsoft.Extensions.Logging;
-using System.Diagnostics;
 
 namespace TeleTool.Bot.Logger
 {
-    public class ConsoleLogger : ILogger
+    public sealed class ConsoleLogger : ILogger
     {
         public void Log(LogLevel Level, string Message)
         {

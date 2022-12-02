@@ -1,4 +1,4 @@
-﻿using C3.LINQ;
+﻿using C3.Linq;
 using System.Diagnostics.CodeAnalysis;
 using System.Reflection;
 using Telegram.Bot;
@@ -22,7 +22,8 @@ namespace TelegramTool.Bot
         protected abstract string Token { get; }
         [NotNull]
         protected abstract TDBCredentials Credits { get; }
-        protected abstract ILogger Logger { get; }
+        [AllowNull]
+        protected abstract ILogger? Logger { get; }
         internal protected virtual bool EditMessagesMode => false;
         internal protected TelegramBotClient Api { get; private set; } = null!;
         protected User Botself { get; private set; } = null!;
@@ -62,39 +63,40 @@ namespace TelegramTool.Bot
                 Api = null!;
                 Botself = null!;
             }
-            Logger.LogInformation("Telegram bot has stopped.");
+            Logger?.LogInformation("Telegram bot has stopped.");
         }
         private void SettingHandlers()
         {
-            Logger.LogInformation($"Analyzing all handlers...");
+            Logger?.LogDebug($"Analyzing all handlers...");
 
             MethodInfo[] MethodCommandHandlers = GetType().GetMethods(BindingFlags.NonPublic | BindingFlags.Instance | BindingFlags.DeclaredOnly);
 
-            Logger.LogInformation($"Founded {MethodCommandHandlers.Length} methods.");
+            Logger?.LogDebug($"Founded {MethodCommandHandlers.Length} methods.");
 
+            OnCommandAttribute? OnCommand;
+            OnCommandAttribute? OnCallback;
             foreach (var CommandHandlerMethod in MethodCommandHandlers)
             {
-                IEnumerable<OnCommandAttribute> OnCommand = CommandHandlerMethod.GetCustomAttributes<OnCommandAttribute>(false);
-                IEnumerable<OnCommandAttribute> OnCallback = CommandHandlerMethod.GetCustomAttributes<OnCallbackDataAttribute>(false);
+                OnCommand = CommandHandlerMethod.GetCustomAttribute<OnCommandAttribute>(false);
+                OnCallback = CommandHandlerMethod.GetCustomAttribute<OnCallbackDataAttribute>(false);
 
-                OnCommand.IterateThroughAll(CommandHandler => CommandHandler.Commands.IterateThroughAll(Command =>
+                OnCommand?.Commands.ForEach(Command =>
                 {
                     CommandHandlers.Add(Command, CommandHandlerMethod.CreateDelegate<CommandHandler>(this));
-                    Logger.LogDebug($"Added listener {CommandHandlerMethod.Name} to command {Command}.");
-                }));
-                OnCallback.IterateThroughAll(CallbackHandler => CallbackHandler.Commands.IterateThroughAll(Command =>
+                    Logger?.LogDebug($"Binded listener \"{CommandHandlerMethod.Name}\" to command \"{Command}\".");
+                });
+                OnCallback?.Commands.ForEach(Command =>
                 {
                     CallbackHandlers.Add(Command, CommandHandlerMethod.CreateDelegate<CommandHandler>(this));
-                    Logger.LogDebug($"Added listener {CommandHandlerMethod.Name} to callback {Command}.");
-                }));
+
+                    Logger?.LogDebug($"Binded listener \"{CommandHandlerMethod.Name}\" to callback \"{Command}\".");
+                });
             }
         }
 
         #region UpdateHandlers
         private async Task HandleUpdateAsync(ITelegramBotClient BotClient, Update Update, CancellationToken CT)
         {
-            Logger.LogInformation($"Recieved new update of type {Update.Type}.");
-
             User User = null!;
             CustomUser CustomUser = null!;
             SessionUser SessionUser = null!;
@@ -106,7 +108,7 @@ namespace TelegramTool.Bot
                 if (!SessionUsers.Any(SessionUser => SessionUser.UserID == User.Id))
                 {
                     SessionUsers.Add(new SessionUser(User));
-                    Logger.LogInformation($"Added new Session User: {User.Username}");
+                    Logger?.LogDebug($"Added new Session User: {User.Username}");
                 }
 
                 SessionUser = SessionUsers.First(SessionUser => SessionUser.UserID == User.Id);
@@ -120,7 +122,7 @@ namespace TelegramTool.Bot
                     CustomUser = new CustomUser(User);
                     CustomUser.ActionsHistory.Add(new UserAction(Update, CustomUser));
                     DB.Users.Add(CustomUser);
-                    Logger.LogInformation($"Added new Custom User: {CustomUser.UserID}");
+                    Logger?.LogDebug($"Added new Custom User: {CustomUser.UserID}");
                 }
                 else
                 {
@@ -169,7 +171,7 @@ namespace TelegramTool.Bot
             #region CallbackData Handle
             else if (Update.Type == UpdateType.CallbackQuery)
             {
-                User = Update.CallbackQuery.From;
+                User = Update.CallbackQuery!.From;
                 Chat = await Api.GetChatAsync(User.Id, CT);
                 Command = Update.CallbackQuery?.Data?.Trim().Split(' ') ?? new[] { " " };
 
@@ -184,7 +186,7 @@ namespace TelegramTool.Bot
         {
             await Task.CompletedTask;
 
-            Logger.LogCritical(Exception);
+            Logger?.LogCritical(Exception);
         }
         #endregion
     }

@@ -1,4 +1,4 @@
-<Project Sdk="Microsoft.NET.Sdk">
+﻿<Project Sdk="Microsoft.NET.Sdk">
 
   <PropertyGroup>
     <TargetFramework>net7.0</TargetFramework>
@@ -7,15 +7,10 @@
   </PropertyGroup>
 
   <ItemGroup>
+    <PackageReference Include="C3" Version="1.0.0" />
     <PackageReference Include="Microsoft.EntityFrameworkCore" Version="7.0.0" />
     <PackageReference Include="Npgsql.EntityFrameworkCore.PostgreSQL" Version="7.0.0" />
     <PackageReference Include="Telegram.Bot" Version="18.0.0" />
-  </ItemGroup>
-
-  <ItemGroup>
-    <Reference Include="C3">
-      <HintPath>..\..\C^3\C^3\bin\Release\net7.0\publish\C3.dll</HintPath>
-    </Reference>
   </ItemGroup>
 
 </Project>
