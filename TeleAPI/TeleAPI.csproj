@@ -13,6 +13,7 @@
     <Authors>TeaFaris</Authors>
     <Title>TeleAPI</Title>
     <GeneratePackageOnBuild>True</GeneratePackageOnBuild>
+    <Description>Comfortable API for working with telegram bots</Description>
   </PropertyGroup>
 
   <ItemGroup>
