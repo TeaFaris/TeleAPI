@@ -37,18 +37,18 @@ namespace TeleAPI.Bot
             if (Credits is null)
                 throw new Exception("Current bot using no database.");
 
-            return (TDB)Activator.CreateInstance(typeof(TDB), Credits);
+            return (TDB)Activator.CreateInstance(typeof(TDB), Credits)!;
         }
         /// <summary>
         /// Gets a Session User Data.
         /// </summary>
         /// <param name="CustomUser"></param>
         /// <returns>Session user if user texted in this session, otherwise null.</returns>
-        internal protected SessionUser? GetSessionUser(CustomUser CustomUser) => SessionUsers.FirstOrDefault(User => User.UserID == CustomUser.UserID);
+        internal protected SessionUser? GetSessionUser(CustomUser CustomUser) => SessionUsers.Find(User => User.UserID == CustomUser.UserID);
         private List<SessionUser> SessionUsers { get; init; } = new List<SessionUser>();
         private Dictionary<string, CommandHandler> CommandHandlers { get; init; } = new Dictionary<string, CommandHandler>();
         private Dictionary<string, CommandHandler> CallbackHandlers { get; init; } = new Dictionary<string, CommandHandler>();
-        public TelegramBot() => SettingHandlers();
+        protected TelegramBot() => SettingHandlers();
         public async void Run()
         {
             CTS = new CancellationTokenSource();
@@ -63,7 +63,7 @@ namespace TeleAPI.Bot
         }
         public void Stop()
         {
-            if (CTS is not null && CTS.IsCancellationRequested)
+            if (CTS?.IsCancellationRequested == true)
             {
                 CTS.Cancel();
                 Api = null!;
@@ -73,7 +73,7 @@ namespace TeleAPI.Bot
         }
         private void SettingHandlers()
         {
-            Logger?.LogDebug($"Analyzing all handlers...");
+            Logger?.LogDebug("Analyzing all handlers...");
 
             MethodInfo[] MethodCommandHandlers = GetType().GetMethods(BindingFlags.NonPublic | BindingFlags.Instance | BindingFlags.DeclaredOnly);
 
@@ -141,6 +141,7 @@ namespace TeleAPI.Bot
             RequestArgs CreateArgs() => new()
             {
                 CancellationToken = CT,
+                SessionUser = SessionUser,
                 Chat = Chat,
                 Command = Command,
                 CustomUser = CustomUser,
