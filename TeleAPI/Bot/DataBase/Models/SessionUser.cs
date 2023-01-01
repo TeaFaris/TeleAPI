@@ -1,6 +1,6 @@
 ﻿using Telegram.Bot.Types;
 
-namespace TeleInstrument.SessionData
+namespace TeleAPI.Bot.DataBase.Models
 {
     public class SessionUser
     {
@@ -9,7 +9,7 @@ namespace TeleInstrument.SessionData
         public Message? LastMessage { get; internal set; }
         internal bool IsGetMessageState { get; set; } = false;
         internal Message? GetMessageStateMessage { get; set; }
-        public SessionUser(User User) => this.UserID = User.Id;
+        public SessionUser(User User) => UserID = User.Id;
         public SessionUser(long UserID) => this.UserID = UserID;
     }
 }

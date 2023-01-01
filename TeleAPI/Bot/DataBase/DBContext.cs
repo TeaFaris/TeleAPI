@@ -1,7 +1,7 @@
 ﻿using Microsoft.EntityFrameworkCore;
-using TeleInstrument.DataBase.Models;
+using TeleAPI.Bot.DataBase.Models;
 
-namespace TeleInstrument.DataBase
+namespace TeleAPI.Bot.DataBase
 {
     public abstract class TelegramDBContext : DbContext
     {

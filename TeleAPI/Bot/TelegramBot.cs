@@ -1,27 +1,27 @@
 ﻿using C3.Linq;
 using System.Diagnostics.CodeAnalysis;
 using System.Reflection;
+using TeleAPI.Bot.DataBase;
+using TeleAPI.Bot.DataBase.Existing;
+using TeleAPI.Bot.DataBase.Models;
+using TeleAPI.Bot.Logger;
+using TeleAPI.Bot.Request;
 using Telegram.Bot;
 using Telegram.Bot.Polling;
 using Telegram.Bot.Types;
 using Telegram.Bot.Types.Enums;
-using TelegramTool.Bot.Request;
-using TeleInstrument.DataBase;
-using TeleInstrument.DataBase.Models;
-using TeleInstrument.SessionData;
-using TeleTool.Bot.Logger;
 
-namespace TelegramTool.Bot
+namespace TeleAPI.Bot
 {
     public abstract class TelegramBot<TDB, TDBCredentials>
         where TDB : TelegramDBContext, IDBContext<TDBCredentials>
-        where TDBCredentials : IDBCredentials
+        where TDBCredentials : struct, IDBCredentials
     {
         protected const string DEFAULT = "_";
         [NotNull]
         protected abstract string Token { get; }
-        [NotNull]
-        protected abstract TDBCredentials Credits { get; }
+        [AllowNull]
+        protected abstract TDBCredentials? Credits { get; }
         [AllowNull]
         protected abstract ILogger? Logger { get; }
         internal protected virtual bool EditMessagesMode => false;
@@ -32,7 +32,13 @@ namespace TelegramTool.Bot
         /// Use in using block, or dispose it after using.
         /// </summary>
         /// <returns>Database context</returns>
-        protected TDB GetDataBase() => (TDB)Activator.CreateInstance(typeof(TDB), Credits);
+        protected TDB GetDataBase()
+        {
+            if (Credits is null)
+                throw new Exception("Current bot using no database.");
+
+            return (TDB)Activator.CreateInstance(typeof(TDB), Credits);
+        }
         /// <summary>
         /// Gets a Session User Data.
         /// </summary>
@@ -156,7 +162,8 @@ namespace TelegramTool.Bot
                 Command = Update.Message?.Text?.Trim().Split(' ') ?? new[] { " " };
 
                 SessionUserCheck();
-                await DBUserCheck();
+                if(Credits is not null)
+                    await DBUserCheck();
 
                 if (SessionUser.IsGetMessageState)
                 {
@@ -176,7 +183,8 @@ namespace TelegramTool.Bot
                 Command = Update.CallbackQuery?.Data?.Trim().Split(' ') ?? new[] { " " };
 
                 SessionUserCheck();
-                await DBUserCheck();
+                if (Credits is not null)
+                    await DBUserCheck();
 
                 HandleHandlers(CallbackHandlers, CreateArgs());
             }
@@ -189,5 +197,9 @@ namespace TelegramTool.Bot
             Logger?.LogCritical(Exception);
         }
         #endregion
+    }
+    public abstract class TelegramBot : TelegramBot<PostgreSQLContext, PostgresCreditionals>
+    {
+        protected override PostgresCreditionals? Credits => null;
     }
 }

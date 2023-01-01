@@ -1,8 +1,8 @@
 ﻿using Telegram.Bot.Types;
 using Telegram.Bot;
-using TeleInstrument.DataBase.Models;
+using TeleAPI.Bot.DataBase.Models;
 
-namespace TelegramTool.Bot.Request
+namespace TeleAPI.Bot.Request
 {
     public readonly struct RequestArgs
     {
