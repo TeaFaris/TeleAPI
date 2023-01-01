@@ -1,4 +1,4 @@
-﻿namespace TelegramTool.Bot.Request
+﻿namespace TeleAPI.Bot.Request
 {
     public delegate Task CommandHandler(RequestArgs Args);
     [AttributeUsage(AttributeTargets.Method)]

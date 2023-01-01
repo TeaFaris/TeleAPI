@@ -1,6 +1,6 @@
 ﻿using Microsoft.Extensions.Logging;
 
-namespace TeleTool.Bot.Logger
+namespace TeleAPI.Bot.Logger
 {
     public interface ILogger
     {

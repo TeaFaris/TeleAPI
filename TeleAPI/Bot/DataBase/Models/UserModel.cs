@@ -2,10 +2,8 @@
 using Telegram.Bot;
 using Telegram.Bot.Types;
 using Telegram.Bot.Types.Enums;
-using TelegramTool.Bot;
-using TeleInstrument.SessionData;
 
-namespace TeleInstrument.DataBase.Models
+namespace TeleAPI.Bot.DataBase.Models
 {
     public class CustomUser
     {
@@ -15,7 +13,7 @@ namespace TeleInstrument.DataBase.Models
         public long UserID { get; init; }
         public async Task<User> GetUser(ITelegramBotClient Bot) => (await Bot.GetChatMemberAsync(ID, ID)).User;
         public List<UserAction> ActionsHistory { get; init; } = new List<UserAction>();
-        public CustomUser(User User) => this.UserID = User.Id;
+        public CustomUser(User User) => UserID = User.Id;
         public CustomUser(long UserID) => this.UserID = UserID;
         private CustomUser() { }
     }
@@ -32,8 +30,8 @@ namespace TeleInstrument.DataBase.Models
         public UserAction(Update Action, CustomUser Owner)
         {
             this.Owner = Owner;
-            this.ActionType = Action.Type;
-            this.Data = Action.Message?.Text ?? Action.CallbackQuery?.Data ?? "NoData";
+            ActionType = Action.Type;
+            Data = Action.Message?.Text ?? Action.CallbackQuery?.Data ?? "NoData";
         }
         private UserAction() { }
         public override string ToString() => $"[{Date:G}]: {ActionType} = {Data}";

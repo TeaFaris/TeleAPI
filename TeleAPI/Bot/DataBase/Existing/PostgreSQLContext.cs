@@ -1,6 +1,6 @@
 ﻿using Microsoft.EntityFrameworkCore;
 
-namespace TeleInstrument.DataBase.Existing
+namespace TeleAPI.Bot.DataBase.Existing
 {
     public class PostgreSQLContext : TelegramDBContext, IDBContext<PostgresCreditionals>
     {
