@@ -14,6 +14,7 @@
     <Title>TeleAPI</Title>
     <GeneratePackageOnBuild>True</GeneratePackageOnBuild>
     <Description>Comfortable API for working with telegram bots</Description>
+    <Version>$(AssemblyVersion)</Version>
   </PropertyGroup>
 
   <ItemGroup>
