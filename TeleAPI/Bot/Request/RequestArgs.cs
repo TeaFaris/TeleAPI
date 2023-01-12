@@ -3,7 +3,7 @@ using Telegram.Bot.Types;
 
 namespace TeleAPI.Bot.Request
 {
-    public readonly struct RequestArgs
+    public struct RequestArgs
     {
         public required CustomUser CustomUser { get; init; }
         public required SessionUser SessionUser { get; init; }
@@ -11,5 +11,6 @@ namespace TeleAPI.Bot.Request
         public required Update Update { get; init; }
         public required CancellationToken CancellationToken { get; init; }
         public required string[] Command { get; init; }
+        public object[] Args { get; set; }
     }
 }

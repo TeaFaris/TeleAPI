@@ -1,4 +1,5 @@
 ﻿using C3.Linq;
+using System.Diagnostics;
 using System.Diagnostics.CodeAnalysis;
 using System.Reflection;
 using TeleAPI.Bot.DataBase;
@@ -17,7 +18,8 @@ namespace TeleAPI.Bot
         where TDB : TelegramDBContext, IDBContext<TDBCredentials>
         where TDBCredentials : struct, IDBCredentials
     {
-        protected const string DEFAULT = "_";
+        protected const string DEFAULT = "D_E_F_A_U_L_T";
+        protected const string ERROR_HANDLER = "E_R_R_O_R_H_A_N_D_L_E_R";
         [NotNull]
         protected abstract string Token { get; }
         [AllowNull]
@@ -46,8 +48,8 @@ namespace TeleAPI.Bot
         /// <returns>Session user if user texted in this session, otherwise null.</returns>
         internal protected SessionUser? GetSessionUser(CustomUser CustomUser) => SessionUsers.Find(User => User.UserID == CustomUser.UserID);
         private List<SessionUser> SessionUsers { get; init; } = new List<SessionUser>();
-        private Dictionary<string, CommandHandler> CommandHandlers { get; init; } = new Dictionary<string, CommandHandler>();
-        private Dictionary<string, CommandHandler> CallbackHandlers { get; init; } = new Dictionary<string, CommandHandler>();
+        private Dictionary<string, RequestHandler> CommandHandlers { get; init; } = new Dictionary<string, RequestHandler>();
+        private Dictionary<string, RequestHandler> CallbackHandlers { get; init; } = new Dictionary<string, RequestHandler>();
         protected TelegramBot() => SettingHandlers();
         public async void Run()
         {
@@ -81,21 +83,21 @@ namespace TeleAPI.Bot
 
             OnCommandAttribute? OnCommand;
             OnCommandAttribute? OnCallback;
-            foreach (var CommandHandlerMethod in MethodCommandHandlers)
+            for (int i = 0; i < MethodCommandHandlers.Length; i++)
             {
-                OnCommand = CommandHandlerMethod.GetCustomAttribute<OnCommandAttribute>(false);
-                OnCallback = CommandHandlerMethod.GetCustomAttribute<OnCallbackDataAttribute>(false);
+                OnCommand = MethodCommandHandlers[i].GetCustomAttribute<OnCommandAttribute>(false);
+                OnCallback = MethodCommandHandlers[i].GetCustomAttribute<OnCallbackDataAttribute>(false);
 
                 OnCommand?.Commands.ForEach(Command =>
                 {
-                    CommandHandlers.Add(Command, CommandHandlerMethod.CreateDelegate<CommandHandler>(this));
-                    Logger?.LogDebug($"Binded listener \"{CommandHandlerMethod.Name}\" to command \"{Command}\".");
+                    CommandHandlers.Add(Command, new RequestHandler(MethodCommandHandlers[i].CreateDelegate<CommandHandler>(this)));
+                    Logger?.LogDebug($"Binded listener \"{MethodCommandHandlers[i].Name}\" to command \"{Command}\".");
                 });
                 OnCallback?.Commands.ForEach(Command =>
                 {
-                    CallbackHandlers.Add(Command, CommandHandlerMethod.CreateDelegate<CommandHandler>(this));
+                    CallbackHandlers.Add(Command, new RequestHandler(MethodCommandHandlers[i].CreateDelegate<CommandHandler>(this)));
 
-                    Logger?.LogDebug($"Binded listener \"{CommandHandlerMethod.Name}\" to callback \"{Command}\".");
+                    Logger?.LogDebug($"Binded listener \"{MethodCommandHandlers[i].Name}\" to callback \"{Command}\".");
                 });
             }
         }
@@ -103,6 +105,9 @@ namespace TeleAPI.Bot
         #region UpdateHandlers
         private async Task HandleUpdateAsync(ITelegramBotClient BotClient, Update Update, CancellationToken CT)
         {
+#if DEBUG
+            Stopwatch SW = Stopwatch.StartNew();
+#endif
             User User = null!;
             CustomUser CustomUser = null!;
             SessionUser SessionUser = null!;
@@ -147,12 +152,44 @@ namespace TeleAPI.Bot
                 CustomUser = CustomUser,
                 Update = Update
             };
-            void HandleHandlers(Dictionary<string, CommandHandler> Handlers, RequestArgs Args)
+
+            async void HandleHandlers(Dictionary<string, RequestHandler> Handlers, RequestArgs Args)
             {
-                if (Handlers.TryGetValue(Command[0], out CommandHandler Handler))
-                    _ = Handler.Invoke(Args);
-                else if (Handlers.TryGetValue(DEFAULT, out CommandHandler Default))
-                    _ = Default.Invoke(Args);
+#if DEBUG
+                SW.Stop();
+                Logger?.LogDebug($"Handled update in {SW.Elapsed}");
+                SW.Restart();
+#endif
+                RequestHandler? Handler = default;
+
+                try
+                {
+                    if (Handlers.TryGetValue(Command[0], out Handler))
+                    {
+                        await Handler.Delegate.Invoke(Args);
+                    }
+                    else if (Handlers.TryGetValue(DEFAULT, out Handler))
+                    {
+                        await Handler.Delegate.Invoke(Args);
+                    }
+                }
+                catch (Exception Ex)
+                {
+                    Args.Args = new[] { Ex };
+
+                    if (Handlers.TryGetValue(ERROR_HANDLER, out Handler))
+                    {
+                        await Handler.Delegate.Invoke(Args);
+                    }
+
+                    Logger?.LogCritical(Ex);
+                    Logger?.LogWarning("Try to avoid any errors, because that may cause lags.");
+                }
+
+#if DEBUG
+                SW.Stop();
+                Logger?.LogDebug($"Handled {Handler?.Delegate.GetMethodInfo().Name ?? "error"} in {SW.Elapsed}");
+#endif
             }
 
             #region Command Handle
@@ -163,7 +200,7 @@ namespace TeleAPI.Bot
                 Command = Update.Message?.Text?.Trim().Split(' ') ?? new[] { " " };
 
                 SessionUserCheck();
-                if(Credits is not null)
+                if (Credits is not null)
                     await DBUserCheck();
 
                 if (SessionUser.IsGetMessageState)
@@ -196,6 +233,7 @@ namespace TeleAPI.Bot
             await Task.CompletedTask;
 
             Logger?.LogCritical(Exception);
+            Logger?.LogWarning("Try to avoid any errors, because that may cause lags.");
         }
         #endregion
     }
