@@ -61,7 +61,10 @@ namespace TeleAPI.Bot.Extentions
             if (Bot.EditMessagesMode)
             {
                 if (SessionUser.LastMessage is not null)
+                {
                     await Bot.Api.DeleteMessageAsync(ChatId, SessionUser.LastMessage.MessageId, CancellationToken);
+                }
+
                 switch (SessionUser.LastMessageFromBot?.Type)
                 {
                     case MessageType.Text:
@@ -96,7 +99,9 @@ namespace TeleAPI.Bot.Extentions
             }
 
             if (Msg is not null)
+            {
                 SessionUser.LastMessageFromBot = Msg;
+            }
             return SessionUser.LastMessageFromBot!;
         }
         public static async Task<Message> SendPhotoAsync<TDB, TCredits>(this TelegramBot<TDB, TCredits> Bot, SessionUser User, InputOnlineFile Media, ChatId? ChatId = default, string? Caption = default, ParseMode? ParseMode = default, IEnumerable<MessageEntity>? CaptionEntities = default, bool? DisableNotification = default, bool? ProtectContent = default, int? ReplyToMessageId = default, bool? AllowSendingWithoutReply = default, IReplyMarkup? ReplyMarkup = default, CancellationToken CancellationToken = default) where TDB : TelegramDBContext, IDBContext<TCredits> where TCredits : struct, IDBCredentials
