@@ -53,10 +53,10 @@ namespace TeleAPI.Bot.Extentions
         #endregion
 
         #region Send
-        public static async Task<Message> SendMessageAsync<TDB, TCredits>(this TelegramBot<TDB, TCredits> Bot, SessionUser User, string Text, ChatId? ChatId = default, ParseMode? ParseMode = default, IEnumerable<MessageEntity>? Entities = default, bool? DisableWebPagePreview = default, bool? DisableNotification = default, bool? ProtectContent = default, int? ReplyToMessageId = default, bool? AllowSendingWithoutReply = default, IReplyMarkup? ReplyMarkup = default, CancellationToken CancellationToken = default) where TDB : TelegramDBContext, IDBContext<TCredits> where TCredits : struct, IDBCredentials
+        public static async Task<Message> SendMessageAsync<TDB, TCredits>(this TelegramBot<TDB, TCredits> Bot, SessionUser User, string Text, ParseMode? ParseMode = default, IEnumerable<MessageEntity>? Entities = default, bool? DisableWebPagePreview = default, bool? DisableNotification = default, bool? ProtectContent = default, int? ReplyToMessageId = default, bool? AllowSendingWithoutReply = default, IReplyMarkup? ReplyMarkup = default, CancellationToken CancellationToken = default) where TDB : TelegramDBContext, IDBContext<TCredits> where TCredits : struct, IDBCredentials
         {
             Message? Msg = null;
-            ChatId ??= User.UserID;
+            long ChatId = User.UserID;
             SessionUser SessionUser = User;
             if (Bot.EditMessagesMode)
             {
@@ -86,7 +86,7 @@ namespace TeleAPI.Bot.Extentions
                         }
                     default:
                         {
-                            Msg = await Bot.Api.SendTextMessageAsync(ChatId, Text, ParseMode, Entities, DisableWebPagePreview, DisableNotification, ProtectContent, ReplyToMessageId, AllowSendingWithoutReply, ReplyMarkup, CancellationToken);
+                            Msg = await Bot.SendMessageAsync(ChatId, Text, ParseMode, Entities, DisableWebPagePreview, true, ProtectContent, ReplyToMessageId, AllowSendingWithoutReply, ReplyMarkup, CancellationToken);
                             if (SessionUser.LastMessageFromBot is not null)
                                 await Bot.Api.DeleteMessageAsync(ChatId, SessionUser.LastMessageFromBot.MessageId, CancellationToken);
                             break;
@@ -95,7 +95,7 @@ namespace TeleAPI.Bot.Extentions
             }
             else
             {
-                Msg = await Bot.Api.SendTextMessageAsync(ChatId, Text, ParseMode, Entities, DisableWebPagePreview, DisableNotification, ProtectContent, ReplyToMessageId, AllowSendingWithoutReply, ReplyMarkup, CancellationToken);
+                Msg = await Bot.SendMessageAsync(ChatId, Text, ParseMode, Entities, DisableWebPagePreview, DisableNotification, ProtectContent, ReplyToMessageId, AllowSendingWithoutReply, ReplyMarkup, CancellationToken);
             }
 
             if (Msg is not null)
@@ -104,10 +104,14 @@ namespace TeleAPI.Bot.Extentions
             }
             return SessionUser.LastMessageFromBot!;
         }
-        public static async Task<Message> SendPhotoAsync<TDB, TCredits>(this TelegramBot<TDB, TCredits> Bot, SessionUser User, InputOnlineFile Media, ChatId? ChatId = default, string? Caption = default, ParseMode? ParseMode = default, IEnumerable<MessageEntity>? CaptionEntities = default, bool? DisableNotification = default, bool? ProtectContent = default, int? ReplyToMessageId = default, bool? AllowSendingWithoutReply = default, IReplyMarkup? ReplyMarkup = default, CancellationToken CancellationToken = default) where TDB : TelegramDBContext, IDBContext<TCredits> where TCredits : struct, IDBCredentials
+        public static async Task<Message> SendMessageAsync<TDB, TCredits>(this TelegramBot<TDB, TCredits> Bot, ChatId ChatID, string Text, ParseMode? ParseMode = default, IEnumerable<MessageEntity>? Entities = default, bool? DisableWebPagePreview = default, bool? DisableNotification = default, bool? ProtectContent = default, int? ReplyToMessageId = default, bool? AllowSendingWithoutReply = default, IReplyMarkup? ReplyMarkup = default, CancellationToken CancellationToken = default) where TDB : TelegramDBContext, IDBContext<TCredits> where TCredits : struct, IDBCredentials
+        {
+            return await Bot.Api.SendTextMessageAsync(ChatID, Text, ParseMode, Entities, DisableWebPagePreview, DisableNotification, ProtectContent, ReplyToMessageId, AllowSendingWithoutReply, ReplyMarkup, CancellationToken);
+        }
+        public static async Task<Message> SendPhotoAsync<TDB, TCredits>(this TelegramBot<TDB, TCredits> Bot, SessionUser User, InputOnlineFile Media, string? Caption = default, ParseMode? ParseMode = default, IEnumerable<MessageEntity>? CaptionEntities = default, bool? DisableNotification = default, bool? ProtectContent = default, int? ReplyToMessageId = default, bool? AllowSendingWithoutReply = default, IReplyMarkup? ReplyMarkup = default, CancellationToken CancellationToken = default) where TDB : TelegramDBContext, IDBContext<TCredits> where TCredits : struct, IDBCredentials
         {
             Message Msg;
-            ChatId ??= User.UserID;
+            long ChatId = User.UserID;
             SessionUser SessionUser = User;
             if (Bot.EditMessagesMode)
             {
@@ -128,7 +132,7 @@ namespace TeleAPI.Bot.Extentions
                         }
                     default:
                         {
-                            Msg = await Bot.Api.SendPhotoAsync(ChatId, Media, Caption, ParseMode, CaptionEntities, DisableNotification, ProtectContent, ReplyToMessageId, AllowSendingWithoutReply, ReplyMarkup, CancellationToken);
+                            Msg = await Bot.SendPhotoAsync(ChatId, Media, Caption, ParseMode, CaptionEntities, true, ProtectContent, ReplyToMessageId, AllowSendingWithoutReply, ReplyMarkup, CancellationToken);
                             if (SessionUser.LastMessageFromBot is not null)
                                 await Bot.Api.DeleteMessageAsync(ChatId, SessionUser.LastMessageFromBot.MessageId, CancellationToken);
                             break;
@@ -137,16 +141,20 @@ namespace TeleAPI.Bot.Extentions
             }
             else
             {
-                Msg = await Bot.Api.SendPhotoAsync(ChatId, Media, Caption, ParseMode, CaptionEntities, DisableNotification, ProtectContent, ReplyToMessageId, AllowSendingWithoutReply, ReplyMarkup, CancellationToken);
+                Msg = await Bot.SendPhotoAsync(ChatId, Media, Caption, ParseMode, CaptionEntities, DisableNotification, ProtectContent, ReplyToMessageId, AllowSendingWithoutReply, ReplyMarkup, CancellationToken);
             }
 
             SessionUser.LastMessageFromBot = Msg;
             return Msg;
         }
-        public static async Task<Message> SendVideoAsync<TDB, TCredits>(this TelegramBot<TDB, TCredits> Bot, SessionUser User, InputOnlineFile Video, ChatId? ChatId = default, int? Duration = default, int? Width = default, int? Height = default, InputMedia? Thumb = default, string? Caption = default, ParseMode? ParseMode = default, IEnumerable<MessageEntity>? CaptionEntities = default, bool? SupportsStreaming = default, bool? DisableNotification = default, bool? ProtectContent = default, int? ReplyToMessageId = default, bool? AllowSendingWithoutReply = default, IReplyMarkup? ReplyMarkup = default, CancellationToken CancellationToken = default) where TDB : TelegramDBContext, IDBContext<TCredits> where TCredits : struct, IDBCredentials
+        public static async Task<Message> SendPhotoAsync<TDB, TCredits>(this TelegramBot<TDB, TCredits> Bot, ChatId ChatID, InputOnlineFile Media, string? Caption = default, ParseMode? ParseMode = default, IEnumerable<MessageEntity>? CaptionEntities = default, bool? DisableNotification = default, bool? ProtectContent = default, int? ReplyToMessageId = default, bool? AllowSendingWithoutReply = default, IReplyMarkup? ReplyMarkup = default, CancellationToken CancellationToken = default) where TDB : TelegramDBContext, IDBContext<TCredits> where TCredits : struct, IDBCredentials
+        {
+            return await Bot.Api.SendPhotoAsync(ChatID, Media, Caption, ParseMode, CaptionEntities, DisableNotification, ProtectContent, ReplyToMessageId, AllowSendingWithoutReply, ReplyMarkup, CancellationToken);
+        }
+        public static async Task<Message> SendVideoAsync<TDB, TCredits>(this TelegramBot<TDB, TCredits> Bot, SessionUser User, InputOnlineFile Video, int? Duration = default, int? Width = default, int? Height = default, InputMedia? Thumb = default, string? Caption = default, ParseMode? ParseMode = default, IEnumerable<MessageEntity>? CaptionEntities = default, bool? SupportsStreaming = default, bool? DisableNotification = default, bool? ProtectContent = default, int? ReplyToMessageId = default, bool? AllowSendingWithoutReply = default, IReplyMarkup? ReplyMarkup = default, CancellationToken CancellationToken = default) where TDB : TelegramDBContext, IDBContext<TCredits> where TCredits : struct, IDBCredentials
         {
             Message Msg;
-            ChatId ??= User.UserID;
+            long ChatId = User.UserID;
             SessionUser SessionUser = User;
             if (Bot.EditMessagesMode)
             {
@@ -167,7 +175,7 @@ namespace TeleAPI.Bot.Extentions
                         }
                     default:
                         {
-                            Msg = await Bot.Api.SendVideoAsync(ChatId, Video, Duration, Width, Height, Thumb, Caption, ParseMode, CaptionEntities, SupportsStreaming, DisableNotification, ProtectContent, ReplyToMessageId, AllowSendingWithoutReply, ReplyMarkup, CancellationToken);
+                            Msg = await Bot.SendVideoAsync(ChatId, Video, Duration, Width, Height, Thumb, Caption, ParseMode, CaptionEntities, SupportsStreaming, true, ProtectContent, ReplyToMessageId, AllowSendingWithoutReply, ReplyMarkup, CancellationToken);
                             if (SessionUser.LastMessageFromBot is not null)
                                 await Bot.Api.DeleteMessageAsync(ChatId, SessionUser.LastMessageFromBot.MessageId, CancellationToken);
                             break;
@@ -176,16 +184,20 @@ namespace TeleAPI.Bot.Extentions
             }
             else
             {
-                Msg = await Bot.Api.SendVideoAsync(ChatId, Video, Duration, Width, Height, Thumb, Caption, ParseMode, CaptionEntities, SupportsStreaming, DisableNotification, ProtectContent, ReplyToMessageId, AllowSendingWithoutReply, ReplyMarkup, CancellationToken);
+                Msg = await Bot.SendVideoAsync(ChatId, Video, Duration, Width, Height, Thumb, Caption, ParseMode, CaptionEntities, SupportsStreaming, DisableNotification, ProtectContent, ReplyToMessageId, AllowSendingWithoutReply, ReplyMarkup, CancellationToken);
             }
 
             SessionUser.LastMessageFromBot = Msg;
             return Msg;
         }
-        public static async Task<Message> SendAnimationAsync<TDB, TCredits>(this TelegramBot<TDB, TCredits> Bot, SessionUser User, InputOnlineFile Animation, ChatId? ChatId = default, int? Duration = default, int? Width = default, int? Height = default, InputMedia? Thumb = default, string? Caption = default, ParseMode? ParseMode = default, IEnumerable<MessageEntity>? CaptionEntities = default, bool? DisableNotification = default, bool? ProtectContent = default, int? ReplyToMessageId = default, bool? AllowSendingWithoutReply = default, IReplyMarkup? ReplyMarkup = default, CancellationToken CancellationToken = default) where TDB : TelegramDBContext, IDBContext<TCredits> where TCredits : struct, IDBCredentials
+        public static async Task<Message> SendVideoAsync<TDB, TCredits>(this TelegramBot<TDB, TCredits> Bot, ChatId ChatID, InputOnlineFile Video, int? Duration = default, int? Width = default, int? Height = default, InputMedia? Thumb = default, string? Caption = default, ParseMode? ParseMode = default, IEnumerable<MessageEntity>? CaptionEntities = default, bool? SupportsStreaming = default, bool? DisableNotification = default, bool? ProtectContent = default, int? ReplyToMessageId = default, bool? AllowSendingWithoutReply = default, IReplyMarkup? ReplyMarkup = default, CancellationToken CancellationToken = default) where TDB : TelegramDBContext, IDBContext<TCredits> where TCredits : struct, IDBCredentials
+        {
+            return await Bot.Api.SendVideoAsync(ChatID, Video, Duration, Width, Height, Thumb, Caption, ParseMode, CaptionEntities, SupportsStreaming, DisableNotification, ProtectContent, ReplyToMessageId, AllowSendingWithoutReply, ReplyMarkup, CancellationToken);
+        }
+        public static async Task<Message> SendAnimationAsync<TDB, TCredits>(this TelegramBot<TDB, TCredits> Bot, SessionUser User, InputOnlineFile Animation, int? Duration = default, int? Width = default, int? Height = default, InputMedia? Thumb = default, string? Caption = default, ParseMode? ParseMode = default, IEnumerable<MessageEntity>? CaptionEntities = default, bool? DisableNotification = default, bool? ProtectContent = default, int? ReplyToMessageId = default, bool? AllowSendingWithoutReply = default, IReplyMarkup? ReplyMarkup = default, CancellationToken CancellationToken = default) where TDB : TelegramDBContext, IDBContext<TCredits> where TCredits : struct, IDBCredentials
         {
             Message Msg;
-            ChatId ??= User.UserID;
+            long ChatId = User.UserID;
             SessionUser SessionUser = User;
             if (Bot.EditMessagesMode)
             {
@@ -206,7 +218,7 @@ namespace TeleAPI.Bot.Extentions
                         }
                     default:
                         {
-                            Msg = await Bot.Api.SendAnimationAsync(ChatId, Animation, Duration, Width, Height, Thumb, Caption, ParseMode, CaptionEntities, DisableNotification, ProtectContent, ReplyToMessageId, AllowSendingWithoutReply, ReplyMarkup, CancellationToken);
+                            Msg = await Bot.SendAnimationAsync(ChatId, Animation, Duration, Width, Height, Thumb, Caption, ParseMode, CaptionEntities, true, ProtectContent, ReplyToMessageId, AllowSendingWithoutReply, ReplyMarkup, CancellationToken);
                             if (SessionUser.LastMessageFromBot is not null)
                                 await Bot.Api.DeleteMessageAsync(ChatId, SessionUser.LastMessageFromBot.MessageId, CancellationToken);
                             break;
@@ -215,17 +227,21 @@ namespace TeleAPI.Bot.Extentions
             }
             else
             {
-                Msg = await Bot.Api.SendAnimationAsync(ChatId, Animation, Duration, Width, Height, Thumb, Caption, ParseMode, CaptionEntities, DisableNotification, ProtectContent, ReplyToMessageId, AllowSendingWithoutReply, ReplyMarkup, CancellationToken);
+                Msg = await Bot.SendAnimationAsync(ChatId, Animation, Duration, Width, Height, Thumb, Caption, ParseMode, CaptionEntities, DisableNotification, ProtectContent, ReplyToMessageId, AllowSendingWithoutReply, ReplyMarkup, CancellationToken);
             }
 
             SessionUser.LastMessageFromBot = Msg;
             return Msg;
         }
+        public static async Task<Message> SendAnimationAsync<TDB, TCredits>(this TelegramBot<TDB, TCredits> Bot, ChatId ChatID, InputOnlineFile Animation, int? Duration = default, int? Width = default, int? Height = default, InputMedia? Thumb = default, string? Caption = default, ParseMode? ParseMode = default, IEnumerable<MessageEntity>? CaptionEntities = default, bool? DisableNotification = default, bool? ProtectContent = default, int? ReplyToMessageId = default, bool? AllowSendingWithoutReply = default, IReplyMarkup? ReplyMarkup = default, CancellationToken CancellationToken = default) where TDB : TelegramDBContext, IDBContext<TCredits> where TCredits : struct, IDBCredentials
+        {
+            return await Bot.Api.SendAnimationAsync(ChatID, Animation, Duration, Width, Height, Thumb, Caption, ParseMode, CaptionEntities, DisableNotification, ProtectContent, ReplyToMessageId, AllowSendingWithoutReply, ReplyMarkup, CancellationToken);
+        }
         public static async Task SendChatActionAsync<TDB, TCredits>(this TelegramBot<TDB, TCredits> Bot, SessionUser User, ChatAction ChatAction, CancellationToken CancellationToken = default) where TDB : TelegramDBContext, IDBContext<TCredits> where TCredits : struct, IDBCredentials => await Bot.Api.SendChatActionAsync(User.UserID, ChatAction, CancellationToken);
-        public static async Task<Message> SendDocumentAsync<TDB, TCredits>(this TelegramBot<TDB, TCredits> Bot, SessionUser User, InputOnlineFile Document, ChatId? ChatId = default, InputMedia? Thumb = default, string? Caption = default, ParseMode? ParseMode = default, IEnumerable<MessageEntity>? CaptionEntities = default, bool? DisableContentTypeDetection = default, bool? DisableNotification = default, bool? ProtectContent = default, int? ReplyToMessageId = default, bool? AllowSendingWithoutReply = default, IReplyMarkup? ReplyMarkup = default, CancellationToken CancellationToken = default) where TDB : TelegramDBContext, IDBContext<TCredits> where TCredits : struct, IDBCredentials
+        public static async Task<Message> SendDocumentAsync<TDB, TCredits>(this TelegramBot<TDB, TCredits> Bot, SessionUser User, InputOnlineFile Document, InputMedia? Thumb = default, string? Caption = default, ParseMode? ParseMode = default, IEnumerable<MessageEntity>? CaptionEntities = default, bool? DisableContentTypeDetection = default, bool? DisableNotification = default, bool? ProtectContent = default, int? ReplyToMessageId = default, bool? AllowSendingWithoutReply = default, IReplyMarkup? ReplyMarkup = default, CancellationToken CancellationToken = default) where TDB : TelegramDBContext, IDBContext<TCredits> where TCredits : struct, IDBCredentials
         {
             Message Msg;
-            ChatId ??= User.UserID;
+            long ChatId = User.UserID;
             SessionUser SessionUser = User;
             if (Bot.EditMessagesMode)
             {
@@ -246,7 +262,7 @@ namespace TeleAPI.Bot.Extentions
                         }
                     default:
                         {
-                            Msg = await Bot.Api.SendDocumentAsync(ChatId, Document, Thumb, Caption, ParseMode, CaptionEntities, DisableContentTypeDetection, DisableNotification, ProtectContent, ReplyToMessageId, AllowSendingWithoutReply, ReplyMarkup, CancellationToken);
+                            Msg = await Bot.SendDocumentAsync(ChatId, Document, Thumb, Caption, ParseMode, CaptionEntities, DisableContentTypeDetection, true, ProtectContent, ReplyToMessageId, AllowSendingWithoutReply, ReplyMarkup, CancellationToken);
                             if (SessionUser.LastMessageFromBot is not null)
                                 await Bot.Api.DeleteMessageAsync(ChatId, SessionUser.LastMessageFromBot.MessageId, CancellationToken);
                             break;
@@ -255,11 +271,15 @@ namespace TeleAPI.Bot.Extentions
             }
             else
             {
-                Msg = await Bot.Api.SendDocumentAsync(ChatId, Document, Thumb, Caption, ParseMode, CaptionEntities, DisableContentTypeDetection, DisableNotification, ProtectContent, ReplyToMessageId, AllowSendingWithoutReply, ReplyMarkup, CancellationToken);
+                Msg = await Bot.SendDocumentAsync(ChatId, Document, Thumb, Caption, ParseMode, CaptionEntities, DisableContentTypeDetection, DisableNotification, ProtectContent, ReplyToMessageId, AllowSendingWithoutReply, ReplyMarkup, CancellationToken);
             }
 
             SessionUser.LastMessageFromBot = Msg;
             return Msg;
+        }
+        public static async Task<Message> SendDocumentAsync<TDB, TCredits>(this TelegramBot<TDB, TCredits> Bot, ChatId ChatID, InputOnlineFile Document, InputMedia? Thumb = default, string? Caption = default, ParseMode? ParseMode = default, IEnumerable<MessageEntity>? CaptionEntities = default, bool? DisableContentTypeDetection = default, bool? DisableNotification = default, bool? ProtectContent = default, int? ReplyToMessageId = default, bool? AllowSendingWithoutReply = default, IReplyMarkup? ReplyMarkup = default, CancellationToken CancellationToken = default) where TDB : TelegramDBContext, IDBContext<TCredits> where TCredits : struct, IDBCredentials
+        {
+            return await Bot.Api.SendDocumentAsync(ChatID, Document, Thumb, Caption, ParseMode, CaptionEntities, DisableContentTypeDetection, DisableNotification, ProtectContent, ReplyToMessageId, AllowSendingWithoutReply, ReplyMarkup, CancellationToken);
         }
         #endregion
     }
