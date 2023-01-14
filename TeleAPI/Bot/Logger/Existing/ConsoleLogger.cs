@@ -1,6 +1,6 @@
 ﻿using Microsoft.Extensions.Logging;
 
-namespace TeleAPI.Bot.Logger
+namespace TeleAPI.Bot.Logger.Existing
 {
     public sealed class ConsoleLogger : ILogger
     {
