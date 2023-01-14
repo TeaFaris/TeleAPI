@@ -51,7 +51,7 @@ namespace TeleAPI.Bot
         private Dictionary<string, RequestHandler> CommandHandlers { get; init; } = new Dictionary<string, RequestHandler>();
         private Dictionary<string, RequestHandler> CallbackHandlers { get; init; } = new Dictionary<string, RequestHandler>();
         protected TelegramBot() => SettingHandlers();
-        public async void Run()
+        public async Task Run()
         {
             CTS = new CancellationTokenSource();
             ReceiverOptions ReceiverOptions = new()
