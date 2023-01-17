@@ -46,7 +46,7 @@ namespace TeleAPI.Bot
         /// </summary>
         /// <param name="CustomUser"></param>
         /// <returns>Session user if user texted in this session, otherwise null.</returns>
-        internal protected SessionUser? GetSessionUser(CustomUser CustomUser) => SessionUsers.Find(User => User.UserID == CustomUser.UserID);
+        internal protected SessionUser? GetSessionUser([NotNull] CustomUser CustomUser) => SessionUsers.Find(User => User.UserID == CustomUser.UserID);
         private List<SessionUser> SessionUsers { get; init; } = new List<SessionUser>();
         private Dictionary<string, RequestHandler> CommandHandlers { get; init; } = new Dictionary<string, RequestHandler>();
         private Dictionary<string, RequestHandler> CallbackHandlers { get; init; } = new Dictionary<string, RequestHandler>();
@@ -105,7 +105,7 @@ namespace TeleAPI.Bot
         #region UpdateHandlers
         private async Task HandleUpdateAsync(ITelegramBotClient BotClient, Update Update, CancellationToken CT)
         {
-#if DEBUG
+#if TRACE
             Stopwatch SW = Stopwatch.StartNew();
 #endif
             User User = null!;
@@ -155,7 +155,7 @@ namespace TeleAPI.Bot
 
             async void HandleHandlers(Dictionary<string, RequestHandler> Handlers, RequestArgs Args)
             {
-#if DEBUG
+#if TRACE
                 SW.Stop();
                 Logger?.LogDebug($"Handled update in {SW.Elapsed}");
                 SW.Restart();
@@ -186,47 +186,53 @@ namespace TeleAPI.Bot
                     Logger?.LogWarning("Try to avoid any errors, because that may cause lags.");
                 }
 
-#if DEBUG
+#if TRACE
                 SW.Stop();
                 Logger?.LogDebug($"Handled {Handler?.Delegate.GetMethodInfo().Name ?? "error"} in {SW.Elapsed}");
 #endif
             }
 
-            #region Command Handle
-            if (Update.Type == UpdateType.Message)
+            switch (Update.Type)
             {
-                User = Update.Message!.From!;
-                Chat = Update.Message.Chat;
-                Command = Update.Message?.Text?.Trim().Split(' ') ?? new[] { " " };
+                case UpdateType.Message:
+                    {
+                        User = Update.Message!.From!;
+                        Chat = Update.Message.Chat;
+                        Command = Update.Message?.Text?.Trim().Split(' ') ?? new[] { " " };
 
-                SessionUserCheck();
-                if (Credits is not null)
-                    await DBUserCheck();
+                        SessionUserCheck();
+                        if (Credits is not null)
+                            await DBUserCheck();
 
-                if (SessionUser.IsGetMessageState)
-                {
-                    SessionUser.GetMessageStateMessage = Update.Message;
-                    return;
-                }
+                        if (SessionUser.IsGetMessageState)
+                        {
+                            SessionUser.GetMessageStateMessage = Update.Message;
+                            return;
+                        }
 
-                HandleHandlers(CommandHandlers, CreateArgs());
+                        HandleHandlers(CommandHandlers, CreateArgs());
+                        break;
+                    }
+                case UpdateType.CallbackQuery:
+                    {
+                        User = Update.CallbackQuery!.From;
+                        Chat = await Api.GetChatAsync(User.Id, CT);
+                        Command = Update.CallbackQuery?.Data?.Trim().Split(' ') ?? new[] { " " };
+
+                        SessionUserCheck();
+                        if (Credits is not null)
+                            await DBUserCheck();
+
+                        if (SessionUser.IsGetCallbackDataState)
+                        {
+                            SessionUser.GetCallbackStateQuery = Update.CallbackQuery;
+                            return;
+                        }
+
+                        HandleHandlers(CallbackHandlers, CreateArgs());
+                        break;
+                    }
             }
-            #endregion
-
-            #region CallbackData Handle
-            else if (Update.Type == UpdateType.CallbackQuery)
-            {
-                User = Update.CallbackQuery!.From;
-                Chat = await Api.GetChatAsync(User.Id, CT);
-                Command = Update.CallbackQuery?.Data?.Trim().Split(' ') ?? new[] { " " };
-
-                SessionUserCheck();
-                if (Credits is not null)
-                    await DBUserCheck();
-
-                HandleHandlers(CallbackHandlers, CreateArgs());
-            }
-            #endregion
         }
         private async Task HandlePollingErrorAsync(ITelegramBotClient BotClient, Exception Exception, CancellationToken CT)
         {
