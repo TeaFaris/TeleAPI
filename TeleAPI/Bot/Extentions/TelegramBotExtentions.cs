@@ -58,12 +58,23 @@ namespace TeleAPI.Bot.Extentions
                 return Number;
             return default;
         }
-        public static async Task<CallbackQuery> ReciveCallbackAsync<TDB, TCredits>(this TelegramBot<TDB, TCredits> Bot, SessionUser User)
+        /// <summary>
+        /// Waits for user to input CallbackData. Await it or otherwise it will not work.
+        /// </summary>
+        /// <typeparam name="TDB"></typeparam>
+        /// <typeparam name="TCredits"></typeparam>
+        /// <param name="Bot">Bot</param>
+        /// <param name="User">User</param>
+        /// <returns>CallbackQuery from user, if already waiting for callback returns null.</returns>
+        public static async Task<CallbackQuery?> ReceiveCallbackAsync<TDB, TCredits>(this TelegramBot<TDB, TCredits> Bot, SessionUser User)
             where TDB : TelegramDBContext, IDBContext<TCredits> where TCredits : struct, IDBCredentials
         {
             await Task.CompletedTask;
 
             var SessionUser = User;
+
+            if (SessionUser.IsGetCallbackDataState)
+                return null;
 
             SessionUser.IsGetCallbackDataState = true;
 
@@ -346,5 +357,43 @@ namespace TeleAPI.Bot.Extentions
             return Msg;
         }
         #endregion
+
+        #region Send-Recieve
+        /// <summary>
+        /// Sends message with option buttons.
+        /// </summary>
+        /// <typeparam name="TDB"></typeparam>
+        /// <typeparam name="TCredits"></typeparam>
+        /// <typeparam name="T">The option type, make sure to override ToString() method, because it displays text on buttons using ToString(), or just define DisplayName param. And if names are gonna to repeat, use UniqueIdentifier to idetify them.</typeparam>
+        /// <returns>Choosen option by user.</returns>
+        public static async Task<T> SendMessageWithOptionButtonsAsync<TDB, TCredits, T>(this TelegramBot<TDB, TCredits> Bot, SessionUser User, string Text, IEnumerable<T> Options, Func<T, string>? DisplayName = default, Func<T, string>? UniqueIdentifier = default, int? MessageThreadID = default, ParseMode? ParseMode = default, IEnumerable<MessageEntity>? Entities = default, bool? DisableWebPagePreview = default, bool? DisableNotification = default, bool? ProtectContent = default, int? ReplyToMessageId = default, bool? AllowSendingWithoutReply = default, IReplyMarkup? ReplyMarkup = default, CancellationToken CancellationToken = default)
+            where TDB : TelegramDBContext, IDBContext<TCredits> where TCredits : struct, IDBCredentials
+        {
+            DisplayName ??= x => x.ToString()!;
+            UniqueIdentifier = DisplayName;
+
+            var OptionButtons = Options
+                                    .Select(x => InlineKeyboardButton.WithCallbackData(DisplayName(x), UniqueIdentifier(x)))
+                                    .ToArray();
+
+            int SubArrays = (int)Math.Ceiling((double)OptionButtons.Length / 3);
+            InlineKeyboardButton[][] ButtonsJagged = new InlineKeyboardButton[SubArrays][];
+
+            for (int i = 0; i < SubArrays; i++)
+            {
+                int Start = i * 3;
+                int End = Math.Min((i + 1) * 3, OptionButtons.Length);
+                ButtonsJagged[i] = new InlineKeyboardButton[End - Start];
+                Array.Copy(OptionButtons, Start, ButtonsJagged[i], 0, End - Start);
+            }
+
+            var InlineKeyboard = new InlineKeyboardMarkup(ButtonsJagged);
+
+            await Bot.SendMessageAsync(User, Text, MessageThreadID, ParseMode, Entities, DisableWebPagePreview, DisableNotification, ProtectContent, ReplyToMessageId, AllowSendingWithoutReply, InlineKeyboard, CancellationToken);
+
+            var ChoosenOption = await Bot.ReceiveCallbackAsync(User);
+            return Options.First(x => UniqueIdentifier(x) == ChoosenOption!.Data);
+            #endregion
+        }
     }
 }
