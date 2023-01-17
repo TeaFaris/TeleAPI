@@ -64,8 +64,6 @@ namespace TeleAPI.Bot.Extentions
             await Task.CompletedTask;
 
             var SessionUser = User;
-            if (SessionUser.IsGetCallbackDataState)
-                throw new Exception("Already receiving callback query!");
 
             SessionUser.IsGetCallbackDataState = true;
 
