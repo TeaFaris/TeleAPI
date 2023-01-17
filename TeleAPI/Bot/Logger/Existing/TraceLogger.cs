@@ -3,7 +3,7 @@ using System.Diagnostics;
 
 namespace TeleAPI.Bot.Logger.Existing
 {
-    public class TraceLogger : ILogger
+    public class DebugLogger : ILogger
     {
         public void Log(LogLevel Level, string Message)
         {
@@ -14,11 +14,11 @@ namespace TeleAPI.Bot.Logger.Existing
                 case LogLevel.Debug:
                 case LogLevel.Information:
                 case LogLevel.Warning:
-                    Trace.WriteLine(Message);
+                    Debug.WriteLine(Message);
                     break;
                 case LogLevel.Error:
                 case LogLevel.Critical:
-                    Trace.Fail(Message);
+                    Debug.Fail(Message);
                     break;
             }
         }

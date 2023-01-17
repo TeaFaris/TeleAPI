@@ -8,7 +8,9 @@ namespace TeleAPI.Bot.DataBase.Models
         public Message? LastMessageFromBot { get; internal set; }
         public Message? LastMessage { get; internal set; }
         internal bool IsGetMessageState { get; set; } = false;
+        internal bool IsGetCallbackDataState { get; set; } = false;
         internal Message? GetMessageStateMessage { get; set; }
+        internal CallbackQuery? GetCallbackStateQuery { get; set; }
         public SessionUser(User User) => UserID = User.Id;
         public SessionUser(long UserID) => this.UserID = UserID;
     }
