@@ -6,8 +6,8 @@
     <Nullable>enable</Nullable>
     <IncludeSymbols>True</IncludeSymbols>
     <SymbolPackageFormat>snupkg</SymbolPackageFormat>
-    <AssemblyVersion>1.0.6.2</AssemblyVersion>
-    <FileVersion>1.0.6.2</FileVersion>
+    <AssemblyVersion>1.0.6.3</AssemblyVersion>
+    <FileVersion>1.0.6.3</FileVersion>
     <RepositoryUrl>https://github.com/TeaFaris/TeleAPI</RepositoryUrl>
     <PackageProjectUrl>https://github.com/TeaFaris/TeleAPI</PackageProjectUrl>
     <Authors>TeaFaris</Authors>
