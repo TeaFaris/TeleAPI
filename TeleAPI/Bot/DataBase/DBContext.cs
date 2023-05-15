@@ -7,6 +7,9 @@ namespace TeleAPI.Bot.DataBase
     {
         public DbSet<TUser> Users { get; set; } = null!;
         internal DbSet<UserAction> UsersActions { get; set; } = null!;
+
+        protected TelegramDBContext(DbContextOptions options) : base(options) { }
+        protected TelegramDBContext() { }
     }
     public interface IDBContext<TCredentials> where TCredentials : IDBCredentials
     {
