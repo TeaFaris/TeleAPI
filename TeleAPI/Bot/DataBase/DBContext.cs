@@ -3,9 +3,9 @@ using TeleAPI.Bot.DataBase.Models;
 
 namespace TeleAPI.Bot.DataBase
 {
-    public abstract class TelegramDBContext : DbContext
+    public abstract class TelegramDBContext<TUser> : DbContext where TUser : CustomUser, new()
     {
-        public DbSet<CustomUser> Users { get; set; } = null!;
+        public DbSet<TUser> Users { get; set; } = null!;
         internal DbSet<UserAction> UsersActions { get; set; } = null!;
     }
     public interface IDBContext<TCredentials> where TCredentials : IDBCredentials
