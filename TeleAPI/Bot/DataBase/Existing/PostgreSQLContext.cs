@@ -1,8 +1,9 @@
 ﻿using Microsoft.EntityFrameworkCore;
+using TeleAPI.Bot.DataBase.Models;
 
 namespace TeleAPI.Bot.DataBase.Existing
 {
-    public class PostgreSQLContext : TelegramDBContext, IDBContext<PostgresCreditionals>
+    public class PostgreSQLContext<TUser> : TelegramDBContext<TUser>, IDBContext<PostgresCreditionals> where TUser : CustomUser, new()
     {
         public PostgresCreditionals Credits { get; init; }
         public PostgreSQLContext(PostgresCreditionals Credits)

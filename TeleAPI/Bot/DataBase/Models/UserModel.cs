@@ -1,5 +1,4 @@
 ﻿using System.ComponentModel.DataAnnotations;
-using Telegram.Bot;
 using Telegram.Bot.Types;
 using Telegram.Bot.Types.Enums;
 
@@ -11,11 +10,10 @@ namespace TeleAPI.Bot.DataBase.Models
         public long ID { get; init; }
         [Required(AllowEmptyStrings = false, ErrorMessage = "UserID is required!")]
         public long UserID { get; init; }
-        public async Task<User> GetUser(ITelegramBotClient Bot) => (await Bot.GetChatMemberAsync(ID, ID)).User;
         public List<UserAction> ActionsHistory { get; init; } = new List<UserAction>();
         public CustomUser(User User) => UserID = User.Id;
         public CustomUser(long UserID) => this.UserID = UserID;
-        private CustomUser() { }
+        public CustomUser() { }
     }
     public class UserAction
     {

@@ -3,9 +3,10 @@ using Telegram.Bot.Types;
 
 namespace TeleAPI.Bot.Request
 {
-    public struct RequestArgs
+    public class RequestArgs<TUser>
+        where TUser : CustomUser, new()
     {
-        public required CustomUser CustomUser { get; init; }
+        public required TUser CustomUser { get; init; }
         public required SessionUser SessionUser { get; init; }
         public required Chat Chat { get; init; }
         public required Update Update { get; init; }
