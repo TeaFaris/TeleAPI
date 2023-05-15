@@ -14,27 +14,28 @@ using Telegram.Bot.Types.Enums;
 
 namespace TeleAPI.Bot
 {
-    public abstract class TelegramBot<TDB, TDBCredentials>
-        where TDB : TelegramDBContext, IDBContext<TDBCredentials>
+    public abstract class TelegramBot<TDB, TDBCredentials, TUser>
+        where TDB : TelegramDBContext<TUser>, IDBContext<TDBCredentials>
         where TDBCredentials : struct, IDBCredentials
+        where TUser : CustomUser, new()
     {
         protected const string DEFAULT = "D_E_F_A_U_L_T";
         protected const string ERROR_HANDLER = "E_R_R_O_R_H_A_N_D_L_E_R";
         [NotNull]
         protected abstract string Token { get; }
         [AllowNull]
-        protected abstract TDBCredentials? Credits { get; }
+        protected virtual TDBCredentials? Credits { get; }
         [AllowNull]
         protected abstract ILogger? Logger { get; }
         internal protected virtual bool EditMessagesMode => false;
-        internal protected TelegramBotClient Api { get; private set; } = null!;
+        internal protected TelegramBotClient API { get; private set; } = null!;
         protected User Botself { get; private set; } = null!;
         protected CancellationTokenSource CTS { get; private set; } = null!;
         /// <summary>
         /// Use in using block, or dispose it after using.
         /// </summary>
         /// <returns>Database context</returns>
-        protected TDB GetDataBase()
+        protected internal virtual TDB GetDataBase()
         {
             if (Credits is null)
                 throw new Exception("Current bot using no database.");
@@ -48,8 +49,8 @@ namespace TeleAPI.Bot
         /// <returns>Session user if user texted in this session, otherwise null.</returns>
         internal protected SessionUser? GetSessionUser([NotNull] CustomUser CustomUser) => SessionUsers.Find(User => User.UserID == CustomUser.UserID);
         private List<SessionUser> SessionUsers { get; init; } = new List<SessionUser>();
-        private Dictionary<string, RequestHandler> CommandHandlers { get; init; } = new Dictionary<string, RequestHandler>();
-        private Dictionary<string, RequestHandler> CallbackHandlers { get; init; } = new Dictionary<string, RequestHandler>();
+        private Dictionary<string, RequestHandler<TUser>> CommandHandlers { get; init; } = new Dictionary<string, RequestHandler<TUser>>();
+        private Dictionary<string, RequestHandler<TUser>> CallbackHandlers { get; init; } = new Dictionary<string, RequestHandler<TUser>>();
         protected TelegramBot() => SettingHandlers();
         public async Task Run()
         {
@@ -58,17 +59,17 @@ namespace TeleAPI.Bot
             {
                 AllowedUpdates = Array.Empty<UpdateType>()
             };
-            Api = new TelegramBotClient(Token);
-            Botself = await Api.GetMeAsync();
+            API = new TelegramBotClient(Token);
+            Botself = await API.GetMeAsync();
 
-            Api.StartReceiving(HandleUpdateAsync, HandlePollingErrorAsync, ReceiverOptions, CTS.Token);
+            API.StartReceiving(HandleUpdateAsync, HandlePollingErrorAsync, ReceiverOptions, CTS.Token);
         }
         public void Stop()
         {
             if (CTS?.IsCancellationRequested == true)
             {
                 CTS.Cancel();
-                Api = null!;
+                API = null!;
                 Botself = null!;
             }
             Logger?.LogInformation("Telegram bot has stopped.");
@@ -82,7 +83,7 @@ namespace TeleAPI.Bot
             Logger?.LogDebug($"Founded {MethodCommandHandlers.Length} methods.");
 
             OnCommandAttribute? OnCommand;
-            OnCommandAttribute? OnCallback;
+            OnCallbackDataAttribute? OnCallback;
             for (int i = 0; i < MethodCommandHandlers.Length; i++)
             {
                 OnCommand = MethodCommandHandlers[i].GetCustomAttribute<OnCommandAttribute>(false);
@@ -90,12 +91,12 @@ namespace TeleAPI.Bot
 
                 OnCommand?.Commands.ForEach(Command =>
                 {
-                    CommandHandlers.Add(Command, new RequestHandler(MethodCommandHandlers[i].CreateDelegate<CommandHandler>(this)));
+                    CommandHandlers.Add(Command, new RequestHandler<TUser>(MethodCommandHandlers[i].CreateDelegate<CommandHandler<TUser>>(this)));
                     Logger?.LogDebug($"Binded listener \"{MethodCommandHandlers[i].Name}\" to command \"{Command}\".");
                 });
                 OnCallback?.Commands.ForEach(Command =>
                 {
-                    CallbackHandlers.Add(Command, new RequestHandler(MethodCommandHandlers[i].CreateDelegate<CommandHandler>(this)));
+                    CallbackHandlers.Add(Command, new RequestHandler<TUser>(MethodCommandHandlers[i].CreateDelegate<CommandHandler<TUser>>(this)));
 
                     Logger?.LogDebug($"Binded listener \"{MethodCommandHandlers[i].Name}\" to callback \"{Command}\".");
                 });
@@ -103,13 +104,13 @@ namespace TeleAPI.Bot
         }
 
         #region UpdateHandlers
-        private async Task HandleUpdateAsync(ITelegramBotClient BotClient, Update Update, CancellationToken CT)
+        protected virtual async Task HandleUpdateAsync(ITelegramBotClient BotClient, Update Update, CancellationToken CT)
         {
 #if TRACE
             Stopwatch SW = Stopwatch.StartNew();
 #endif
             User User = null!;
-            CustomUser CustomUser = null!;
+            TUser CustomUser = null!;
             SessionUser SessionUser = null!;
             Chat Chat = null!;
             string[]? Command = null;
@@ -127,12 +128,12 @@ namespace TeleAPI.Bot
             }
             async Task DBUserCheck()
             {
-                using TDB DB = GetDataBase();
+                using var DB = GetDataBase();
                 if (!DB.Users.Any(DBUser => DBUser.UserID == User.Id))
                 {
-                    CustomUser = new CustomUser(User);
+                    CustomUser = (TUser)Activator.CreateInstance(typeof(TUser), User)!;
                     CustomUser.ActionsHistory.Add(new UserAction(Update, CustomUser));
-                    DB.Users.Add(CustomUser);
+                    DB.Add(CustomUser);
                     Logger?.LogDebug($"Added new Custom User: {CustomUser.UserID}");
                 }
                 else
@@ -143,7 +144,7 @@ namespace TeleAPI.Bot
                 }
                 await DB.SaveChangesAsync(CT);
             }
-            RequestArgs CreateArgs() => new()
+            RequestArgs<TUser> CreateArgs() => new()
             {
                 CancellationToken = CT,
                 SessionUser = SessionUser,
@@ -153,14 +154,14 @@ namespace TeleAPI.Bot
                 Update = Update
             };
 
-            async void HandleHandlers(Dictionary<string, RequestHandler> Handlers, RequestArgs Args)
+            async void HandleHandlers(Dictionary<string, RequestHandler<TUser>> Handlers, RequestArgs<TUser> Args)
             {
 #if TRACE
                 SW.Stop();
                 Logger?.LogDebug($"Handled update in {SW.Elapsed}");
                 SW.Restart();
 #endif
-                RequestHandler? Handler = default;
+                RequestHandler<TUser>? Handler = default;
 
                 try
                 {
@@ -186,6 +187,12 @@ namespace TeleAPI.Bot
                     Logger?.LogWarning("Try to avoid any errors, because that may cause lags.");
                 }
 
+                if (Credits is not null)
+                {
+                    using var DB = GetDataBase();
+                    DB.Users.Update(CustomUser);
+                    await DB.SaveChangesAsync(CT);
+                }
 #if TRACE
                 SW.Stop();
                 Logger?.LogDebug($"Handled {Handler?.Delegate.GetMethodInfo().Name ?? "error"} in {SW.Elapsed}");
@@ -210,13 +217,19 @@ namespace TeleAPI.Bot
                             return;
                         }
 
+						if (SessionUser.IsGetCallbackDataState)
+							return;
+
+						if (Update?.Message?.LeftChatMember is not null || Update?.Message?.NewChatMembers is not null) // В новом TeleAPI добавить такую функцию.
+                            return;
+
                         HandleHandlers(CommandHandlers, CreateArgs());
                         break;
                     }
                 case UpdateType.CallbackQuery:
                     {
                         User = Update.CallbackQuery!.From;
-                        Chat = await Api.GetChatAsync(User.Id, CT);
+                        Chat = await API.GetChatAsync(User.Id, CT);
                         Command = Update.CallbackQuery?.Data?.Trim().Split(' ') ?? new[] { " " };
 
                         SessionUserCheck();
@@ -229,6 +242,9 @@ namespace TeleAPI.Bot
                             return;
                         }
 
+                        if (SessionUser.IsGetMessageState)
+                            return;
+
                         HandleHandlers(CallbackHandlers, CreateArgs());
                         break;
                     }
@@ -239,12 +255,11 @@ namespace TeleAPI.Bot
             await Task.CompletedTask;
 
             Logger?.LogCritical(Exception);
+            if(Exception.InnerException is not null)
+                Logger?.LogCritical(Exception.InnerException);
             Logger?.LogWarning("Try to avoid any errors, because that may cause lags.");
         }
         #endregion
     }
-    public abstract class TelegramBot : TelegramBot<PostgreSQLContext, PostgresCreditionals>
-    {
-        protected override PostgresCreditionals? Credits => null;
-    }
+    public abstract class TelegramBot : TelegramBot<PostgreSQLContext<CustomUser>, PostgresCreditionals, CustomUser> { }
 }
